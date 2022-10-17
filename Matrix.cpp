@@ -23,7 +23,7 @@ public:
             std::set<T> col_values;
             for (int j = 0; j < rows; j++)
             {
-                col_values.insert(vector[cols * j + i]);
+                col_values.insert(vector.at(cols * j + i));
             }
             columns[i] = col_values;
         }

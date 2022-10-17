@@ -8,10 +8,8 @@
 
 class Node
 {
-
-    int depth = 0;
-
 public:
+    int depth = 0;
     Node *left = NULL;
     Node *right = NULL;
 

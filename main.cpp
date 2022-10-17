@@ -16,10 +16,10 @@ double baccuracy(Tree tree, std::vector<std::vector<int>> test_data)
 {
   std::map<std::pair<int, int>, int> confusion;
 
-  for (auto row : test_data)
+  for (std::vector<int> row : test_data)
   {
     int predict = tree.predict(row);
-    int actual = row[row.size() - 1];
+    int actual = row.at(row.size() - 1);
     auto key = std::make_pair(predict, actual);
     confusion[key] = confusion.count(key) ? confusion[key] + 1 : 1;
   }
@@ -71,6 +71,6 @@ Tree fit(std::vector<std::vector<int>> data, std::vector<int> classes, int max_d
 
 int main()
 {
-  std::cout << "balanced acc.: " << baccuracy(fit(parseCSV("train.txt")), parseCSV("test.txt")) << std::endl;
+  std::cout << "balanced acc.: " << baccuracy(fit(parse_csv("train.txt"), 50), parse_csv("test.txt")) << std::endl;
   return 0;
 }

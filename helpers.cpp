@@ -5,7 +5,7 @@
 #include <string>
 #include <fstream>
 
-std::vector<std::vector<int>> parseCSV(std::string filename)
+std::vector<std::vector<int>> parse_csv(std::string filename)
 {
     std::ifstream data(filename);
     std::string line;
