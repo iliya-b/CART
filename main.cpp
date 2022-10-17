@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string>
 #include <fstream>
+#include <set>
 
 template <class T>
 class Matrix
@@ -17,6 +18,21 @@ public:
   int total_classes;
 
   Matrix(int rows, int cols, std::vector<T> vector, int total_classes) : rows(rows), cols(cols), vector(vector), total_classes(total_classes){};
+
+  std::vector<std::set<double>> column_values()
+  {
+    std::vector<std::set<double>> columns(cols);
+    for (int i = 0; i < cols; i++)
+    {
+      std::set<double> col_values;
+      for (int j = 0; j < rows; j++)
+      {
+        col_values.insert(vector[cols * j + i]);
+      }
+      columns[i] = col_values;
+    }
+    return columns;
+  }
 
   T operator()(int x, int y)
   {
@@ -62,8 +78,12 @@ class Tree
   Matrix<T> data;
   Node<T> *root;
 
+  std::vector<std::set<T>> column_values;
+
+  std::set<double> classes;
+
 public:
-  Tree(Matrix<double> data) : data(data)
+  Tree(Matrix<double> data) : data(data), column_values(data.column_values()), classes(column_values.back())
   {
     std::vector<int> root_elements(data.rows);
 
@@ -74,9 +94,7 @@ public:
 
   void build_tree()
   {
-    this->split(root, 1000, 1);
-    // std::cout << s.threshold << std::endl;
-    // std::cout << root->threshold << std::endl;
+    this->split(root, 1000000, 1);
   };
 
   int predict(std::vector<double> row)
@@ -124,17 +142,17 @@ public:
       return 0;
 
     double score = 0.;
-    for (int class_id = 0; class_id < data.total_classes; class_id++)
+    for (double class_id : classes)
     {
       int instances_count = 0;
       for (int row : elements)
       {
         instances_count += data(row, -1) == class_id ? 1 : 0;
       }
-      double p = instances_count / size;
+      double p = double(instances_count) / size;
       score += p * p;
     }
-    return (1. - score) * (size / total_instances);
+    return (1. - score) * (double(size) / total_instances);
   };
 
   struct Split get_split(Node<T> *node)
@@ -147,24 +165,28 @@ public:
 
     for (int column = 0; column < data.cols - 1; column++)
     {
-      for (int row = 0; row < data.rows; row++)
+      T previous_value;
+      int step = 0;
+      for (T value : column_values[column])
       {
-        T value = data(row, column);
-        auto split = test_split(column, value, node->elements);
+        double split_value = step == 0 ? value : (previous_value + value) / 2.;
+        auto split = test_split(column, split_value, node->elements);
         auto left = std::get<0>(split);
         auto right = std::get<1>(split);
 
         int total_count = left.size() + right.size();
         double gini = get_gini(left, total_count) + get_gini(right, total_count);
-        // std::cout << "X" << (column + 1) << " < " << value << " Gini=" << gini << std::endl;
+        std::cout << "X" << (column + 1) << " < " << split_value << " Gini=" << gini << " size=" << total_count << std::endl;
         if (gini < b_score)
         {
           b_index = column;
-          b_value = value;
+          b_value = split_value;
           b_score = gini;
           b_left = left;
           b_right = right;
         }
+        previous_value = value;
+        step++;
       }
     }
     struct Split res = {b_index, b_value, b_left, b_right};
@@ -210,6 +232,7 @@ public:
   void split(Node<T> *node, int max_depth, int min_size)
   {
     auto best_split = get_split(node);
+    // std::cout << (best_split.feature + 1) << " < " << best_split.threshold << std::endl;
     node->feature = best_split.feature;
     node->threshold = best_split.threshold;
 
@@ -245,7 +268,7 @@ std::vector<std::vector<double>> parseCSV(std::string filename)
     std::stringstream lineStream(line);
     std::string cell;
     std::vector<double> parsedRow;
-    while (std::getline(lineStream, cell, ','))
+    while (std::getline(lineStream, cell, ';'))
     {
       parsedRow.push_back(atof(cell.c_str()));
     }
@@ -285,7 +308,7 @@ auto dataset2_train()
 {
 
   auto lines = parseCSV("train.txt");
-  return Matrix<double>(lines.size(), lines[0].size(), flatten(lines), 2);
+  return Matrix<double>(lines.size(), lines[0].size(), flatten(lines), 3);
 }
 
 auto dataset2_test()
@@ -307,16 +330,18 @@ int main()
   std::vector<int> mat(4);
 
   auto test_dataset = dataset2_test();
+  int correct_count = 0;
   for (auto line : test_dataset)
   {
     auto predict = tree.predict(line);
     auto actual = line[line.size() - 1];
     mat[predict + dataset.total_classes * actual] += 1;
 
-    std::cout
-        << "PREDICT: " << predict << " ACTUAL: " << actual << std::endl;
+    // std::cout
+    //     << "PREDICT: " << predict << " ACTUAL: " << actual << std::endl;
+    correct_count += predict == actual ? 1 : 0;
   }
-
+  std::cout << "basic acc: " << (double(correct_count) / test_dataset.size()) << std::endl;
   double acc = 0;
   for (int i = 0; i < dataset.total_classes; i++)
   {
