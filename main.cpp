@@ -54,10 +54,19 @@ std::vector<int> prediction(Tree tree, std::vector<std::vector<int>> test_data)
  */
 Tree fit(std::vector<std::vector<int>> data, int max_depth = 0)
 {
-  auto dataset = Matrix<int>(data.size(), data[0].size(), flatten(data));
+  auto dataset = Matrix<int>(data.size(), data.at(0).size(), flatten(data));
   Tree tree(dataset);
   tree.build(max_depth);
   return tree;
+}
+
+Tree fit(std::vector<std::vector<int>> data, std::vector<int> classes, int max_depth = 0)
+{
+  for (int i = 0; i < data.size(); i++)
+  {
+    data.at(i).push_back(classes.at(i));
+  }
+  return fit(data, max_depth);
 }
 
 int main()
