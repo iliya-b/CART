@@ -16,10 +16,10 @@ double baccuracy(Tree tree, std::vector<std::vector<int>> test_data)
 {
   std::map<std::pair<int, int>, int> confusion;
 
-  for (auto line : test_data)
+  for (auto row : test_data)
   {
-    int predict = tree.predict(line);
-    int actual = line[line.size() - 1];
+    int predict = tree.predict(row);
+    int actual = row[row.size() - 1];
     auto key = std::make_pair(predict, actual);
     confusion[key] = confusion.count(key) ? confusion[key] + 1 : 1;
   }
@@ -49,6 +49,9 @@ std::vector<int> prediction(Tree tree, std::vector<std::vector<int>> test_data)
   return result;
 }
 
+/**
+ * build classification tree with maximum depth max_depth (not pruned by default)
+ */
 Tree fit(std::vector<std::vector<int>> data, int max_depth = 0)
 {
   auto dataset = Matrix<int>(data.size(), data[0].size(), flatten(data));

@@ -17,7 +17,7 @@ std::vector<std::vector<int>> parseCSV(std::string filename)
         std::vector<int> parsedRow;
         while (std::getline(lineStream, cell, ';'))
         {
-            parsedRow.push_back(int(atof(cell.c_str()) * 1000));
+            parsedRow.push_back((atoi(cell.c_str())));
         }
         parsedCsv.push_back(parsedRow);
     }
